@@ -1,26 +1,9 @@
-# =========================
-# تثبيت المكتبات
-# =========================
-!pip install streamlit fpdf pandas pyngrok
-
-# =========================
-# الكود الكامل للتطبيق
-# =========================
 import streamlit as st
 import random
 import pandas as pd
 from fpdf import FPDF
 import datetime
 from collections import defaultdict, Counter
-from pyngrok import ngrok
-import os
-
-# =========================
-# إعداد ngrok
-# =========================
-ngrok.kill()  # اغلاق أي نفق مفتوح
-url = ngrok.connect(port=8501)
-print("Open this link on your phone:", url)
 
 # =========================
 # إعدادات التطبيق
@@ -58,7 +41,7 @@ def optimize_cutting(lengths):
     return best_solution
 
 # =========================
-# PDF Generator
+# PDF Generator مع تصميم هندسي
 # =========================
 def generate_pdf(main_df,waste_df,purchase_df,cutting_df,logo_path="logo.png"):
     company_name="NovaStruct Company"
@@ -66,12 +49,13 @@ def generate_pdf(main_df,waste_df,purchase_df,cutting_df,logo_path="logo.png"):
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=10)
 
+    # شعار الشركة
     try:
         pdf.image(logo_path, x=10, y=8, w=30)
     except:
         pass
 
-    # اسم الشركة كبير وأزرق
+    # اسم الشركة كبير وأزرق داكن
     pdf.set_font("Arial",'B',22)
     pdf.set_text_color(0,51,102)
     pdf.cell(0,15,company_name,ln=True,align="C")
@@ -143,7 +127,7 @@ def generate_pdf(main_df,waste_df,purchase_df,cutting_df,logo_path="logo.png"):
     return filename
 
 # =========================
-# Streamlit UI
+# واجهة Streamlit
 # =========================
 st.set_page_config(layout="wide")
 st.title("Rebar Optimizer Pro")
