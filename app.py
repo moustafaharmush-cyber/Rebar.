@@ -2,7 +2,7 @@ import streamlit as st
 import random
 import pandas as pd
 from fpdf import FPDF
-import datetime
+from datetime import date, datetime
 from collections import defaultdict, Counter
 
 # =========================
@@ -70,7 +70,6 @@ st.subheader("Created by Civil Engineer Moustafa Harmouch")
 price = st.number_input("Price per ton ($)", min_value=0.0, value=1000.0)
 
 data = {}
-
 for d in DIAMETERS:
     if f"rows_{d}" not in st.session_state:
         st.session_state[f"rows_{d}"] = [{"Length":0.0,"Quantity":0}]
@@ -93,7 +92,6 @@ for d in DIAMETERS:
 # Run Optimization
 # =========================
 if st.button("Run Optimization"):
-
     main_rows=[]
     for key, rows in st.session_state.items():
         if key.startswith("rows_"):
@@ -153,16 +151,14 @@ if st.button("Run Optimization"):
     st.dataframe(cutting_df)
 
     # =========================
-    # PDF Generator Function
+    # PDF Generator
     # =========================
     pdf_file = "Rebar_Report.pdf"
-    from pathlib import Path
-    from datetime import datetime
-
     pdf = PDF(orientation='L')
     pdf.set_auto_page_break(auto=True, margin=15)
-    logo_path = "logo.png"        # ضع شعار الشركة هنا
-    signature_path = "signature.png"  # ضع صورة توقيع هنا
+
+    logo_path = "logo.png"        # شعار الشركة
+    signature_path = "signature.png"  # صورة توقيع المهندس
     company_name="NovaStruct Company"
     engineer_name="Civil Engineer Moustafa Harmouch"
     signature="Structural Engineering Specialist"
@@ -204,7 +200,7 @@ if st.button("Run Optimization"):
     pdf.ln(15)
     pdf.set_font("Arial",'',16)
     pdf.cell(0,10,f"Report No: {report_number}",ln=True,align="C")
-    pdf.cell(0,10,f"Date: {datetime.date.today()}",ln=True,align="C")
+    pdf.cell(0,10,f"Date: {date.today()}",ln=True,align="C")  # ✅ تم التصحيح هنا
 
     # ==== صفحة التقرير ====
     pdf.add_page()
@@ -223,12 +219,12 @@ if st.button("Run Optimization"):
     pdf.ln(25)
     pdf.set_font("Arial",'',10)
     pdf.cell(0,8,f"Report No: {report_number}",ln=True)
-    pdf.cell(0,8,f"Date: {datetime.date.today()}",ln=True)
+    pdf.cell(0,8,f"Date: {date.today()}",ln=True)
     pdf.ln(5)
 
     # ==== وظيفة رسم الجداول ====
     def draw_table(df,headers,col_widths):
-        pdf.set_fill_color(0,51,102)   # الأزرق الداكن
+        pdf.set_fill_color(0,51,102)
         pdf.set_text_color(255,255,255)
         pdf.set_font("Arial",'B',9)
         for i,h in enumerate(headers):
@@ -260,6 +256,5 @@ if st.button("Run Optimization"):
     draw_table(cutting_df, ["Diameter","Pattern","Count"], [35,160,35])
 
     pdf.output(pdf_file)
-
     with open(pdf_file,"rb") as f:
         st.download_button("Download PDF Report", f, file_name=pdf_file)
