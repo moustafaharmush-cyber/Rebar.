@@ -7,11 +7,12 @@
 # إعداد ngrok لتشغيل Streamlit على الهاتف
 # =========================
 from pyngrok import ngrok
+import os
 
 # =========================
-# كود Streamlit
+# إنشاء ملف app.py
 # =========================
-code = """
+app_code = """
 import streamlit as st
 import random
 import pandas as pd
@@ -19,22 +20,13 @@ from fpdf import FPDF
 import datetime
 from collections import defaultdict, Counter
 
-# =========================
-# Settings
-# =========================
 BAR_LENGTH = 12.0
 ITERATIONS = 3000
-DIAMETERS = [6, 8, 10, 12, 14, 16, 18, 20, 22, 25, 32]
+DIAMETERS = [6,8,10,12,14,16,18,20,22,25,32]
 
-# =========================
-# Weight per meter
-# =========================
 def weight_per_meter(diameter):
-    return (diameter ** 2) / 162
+    return (diameter ** 2)/162
 
-# =========================
-# Cutting Optimization
-# =========================
 def optimize_cutting(lengths):
     best_solution = None
     min_waste = float("inf")
@@ -47,22 +39,19 @@ def optimize_cutting(lengths):
         for length in shuffled:
             placed = False
             for bar in bars:
-                if sum(bar) + length <= BAR_LENGTH:
+                if sum(bar)+length <= BAR_LENGTH:
                     bar.append(length)
                     placed = True
                     break
             if not placed:
                 bars.append([length])
         waste = sum(BAR_LENGTH - sum(bar) for bar in bars)
-        if waste < min_waste or (waste == min_waste and len(bars) < min_bars):
-            min_waste = waste
-            min_bars = len(bars)
-            best_solution = bars
+        if waste<min_waste or (waste==min_waste and len(bars)<min_bars):
+            min_waste=waste
+            min_bars=len(bars)
+            best_solution=bars
     return best_solution
 
-# =========================
-# PDF Generator with Logo & Company Name
-# =========================
 def generate_pdf(main_df, waste_df, purchase_df, cutting_df, logo_path="logo.png"):
     company_name = "NovaStruct Company"
     pdf = FPDF(orientation='L')
@@ -88,101 +77,92 @@ def generate_pdf(main_df, waste_df, purchase_df, cutting_df, logo_path="logo.png
     pdf.cell(0, 8, f"Date: {datetime.date.today()}", ln=True)
     pdf.ln(5)
 
-    # =========================
     # MainBar Section
-    # =========================
     pdf.set_font("Arial", 'B', 11)
     pdf.cell(0, 8, "MainBar", ln=True)
     pdf.set_font("Arial", '', 9)
-
-    col_main = [30, 35, 30, 35]
-    headers_main = ["Diameter", "Length (m)", "Quantity", "Weight (kg)"]
-
-    for i, h in enumerate(headers_main):
-        pdf.cell(col_main[i], 8, h, border=1, align="C")
+    col_main=[30,35,30,35]
+    headers_main=["Diameter","Length (m)","Quantity","Weight (kg)"]
+    for i,h in enumerate(headers_main):
+        pdf.cell(col_main[i],8,h,1,0,"C")
     pdf.ln()
-
-    total_weight = 0
-    for _, row in main_df.iterrows():
-        pdf.cell(col_main[0], 8, f"{int(row['Diameter'])} mm", 1, 0, "C")
-        pdf.cell(col_main[1], 8, f"{row['Length']:.2f}", 1, 0, "C")
-        pdf.cell(col_main[2], 8, f"{int(row['Quantity'])}", 1, 0, "C")
-        pdf.cell(col_main[3], 8, f"{row['Weight']:.2f}", 1, 1, "C")
-        total_weight += row["Weight"]
-
-    pdf.set_font("Arial", 'B', 9)
-    pdf.cell(sum(col_main[:-1]), 8, "TOTAL", 1, 0, "C")
-    pdf.cell(col_main[-1], 8, f"{total_weight:.2f}", 1, 1, "C")
+    total_weight=0
+    for _,row in main_df.iterrows():
+        pdf.cell(col_main[0],8,f"{int(row['Diameter'])} mm",1,0,"C")
+        pdf.cell(col_main[1],8,f"{row['Length']:.2f}",1,0,"C")
+        pdf.cell(col_main[2],8,f"{int(row['Quantity'])}",1,0,"C")
+        pdf.cell(col_main[3],8,f"{row['Weight']:.2f}",1,1,"C")
+        total_weight+=row["Weight"]
+    pdf.set_font("Arial",'B',9)
+    pdf.cell(sum(col_main[:-1]),8,"TOTAL",1,0,"C")
+    pdf.cell(col_main[-1],8,f"{total_weight:.2f}",1,1,"C")
     pdf.ln(10)
 
-    # =========================
-    # Waste, Purchase, Cutting Sections (مثل الكود السابق)
-    # =========================
     # Waste Bars
-    pdf.set_font("Arial", 'B', 11)
-    pdf.cell(0, 8, "Waste Bars", ln=True)
-    pdf.set_font("Arial", '', 9)
-    col_waste = [30, 40, 40, 40]
-    headers_waste = ["Diameter", "Waste Length (m)", "Number of Bars", "Waste Weight (kg)"]
-    for i, h in enumerate(headers_waste):
-        pdf.cell(col_waste[i], 8, h, 1, 0, "C")
+    pdf.set_font("Arial",'B',11)
+    pdf.cell(0,8,"Waste Bars",ln=True)
+    pdf.set_font("Arial",'',9)
+    col_waste=[30,40,40,40]
+    headers_waste=["Diameter","Waste Length (m)","Number of Bars","Waste Weight (kg)"]
+    for i,h in enumerate(headers_waste):
+        pdf.cell(col_waste[i],8,h,1,0,"C")
     pdf.ln()
-    total_waste_weight = 0
-    for _, row in waste_df.iterrows():
-        pdf.cell(col_waste[0], 8, f"{int(row['Diameter'])} mm", 1, 0, "C")
-        pdf.cell(col_waste[1], 8, f"{row['Waste Length (m)']:.2f}", 1, 0, "C")
-        pdf.cell(col_waste[2], 8, f"{int(row['Number of Bars'])}", 1, 0, "C")
-        pdf.cell(col_waste[3], 8, f"{row['Waste Weight (kg)']:.2f}", 1, 1, "C")
-        total_waste_weight += row["Waste Weight (kg)"]
-    pdf.set_font("Arial", 'B', 9)
-    pdf.cell(sum(col_waste[:-1]), 8, "TOTAL", 1, 0, "C")
-    pdf.cell(col_waste[-1], 8, f"{total_waste_weight:.2f}", 1, 1, "C")
+    total_waste_weight=0
+    for _,row in waste_df.iterrows():
+        pdf.cell(col_waste[0],8,f"{int(row['Diameter'])} mm",1,0,"C")
+        pdf.cell(col_waste[1],8,f"{row['Waste Length (m)']:.2f}",1,0,"C")
+        pdf.cell(col_waste[2],8,f"{int(row['Number of Bars'])}",1,0,"C")
+        pdf.cell(col_waste[3],8,f"{row['Waste Weight (kg)']:.2f}",1,1,"C")
+        total_waste_weight+=row["Waste Weight (kg)"]
+    pdf.set_font("Arial",'B',9)
+    pdf.cell(sum(col_waste[:-1]),8,"TOTAL",1,0,"C")
+    pdf.cell(col_waste[-1],8,f"{total_waste_weight:.2f}",1,1,"C")
     pdf.ln(10)
 
     # Purchase 12m Bars
-    pdf.set_font("Arial", 'B', 11)
-    pdf.cell(0, 8, "Purchase 12m Bars", ln=True)
-    pdf.set_font("Arial", '', 9)
-    col_purchase = [30, 35, 40, 40]
-    headers_purchase = ["Diameter", "Bars", "Weight (kg)", "Cost"]
-    for i, h in enumerate(headers_purchase):
-        pdf.cell(col_purchase[i], 8, h, 1, 0, "C")
+    pdf.set_font("Arial",'B',11)
+    pdf.cell(0,8,"Purchase 12m Bars",ln=True)
+    pdf.set_font("Arial",'',9)
+    col_purchase=[30,35,40,40]
+    headers_purchase=["Diameter","Bars","Weight (kg)","Cost"]
+    for i,h in enumerate(headers_purchase):
+        pdf.cell(col_purchase[i],8,h,1,0,"C")
     pdf.ln()
-    total_purchase_weight = 0
-    total_purchase_cost = 0
-    for _, row in purchase_df.iterrows():
-        pdf.cell(col_purchase[0], 8, f"{int(row['Diameter'])} mm", 1, 0, "C")
-        pdf.cell(col_purchase[1], 8, f"{int(row['Bars'])}", 1, 0, "C")
-        pdf.cell(col_purchase[2], 8, f"{row['Weight (kg)']:.2f}", 1, 0, "C")
-        pdf.cell(col_purchase[3], 8, f"{row['Cost']:.2f}", 1, 1, "C")
-        total_purchase_weight += row["Weight (kg)"]
-        total_purchase_cost += row["Cost"]
-    pdf.set_font("Arial", 'B', 9)
-    pdf.cell(col_purchase[0]+col_purchase[1], 8, "TOTAL", 1, 0, "C")
-    pdf.cell(col_purchase[2], 8, f"{total_purchase_weight:.2f}", 1, 0, "C")
-    pdf.cell(col_purchase[3], 8, f"{total_purchase_cost:.2f}", 1, 1, "C")
+    total_purchase_weight=0
+    total_purchase_cost=0
+    for _,row in purchase_df.iterrows():
+        pdf.cell(col_purchase[0],8,f"{int(row['Diameter'])} mm",1,0,"C")
+        pdf.cell(col_purchase[1],8,f"{int(row['Bars'])}",1,0,"C")
+        pdf.cell(col_purchase[2],8,f"{row['Weight (kg)']:.2f}",1,0,"C")
+        pdf.cell(col_purchase[3],8,f"{row['Cost']:.2f}",1,1,"C")
+        total_purchase_weight+=row["Weight (kg)"]
+        total_purchase_cost+=row["Cost"]
+    pdf.set_font("Arial",'B',9)
+    pdf.cell(col_purchase[0]+col_purchase[1],8,"TOTAL",1,0,"C")
+    pdf.cell(col_purchase[2],8,f"{total_purchase_weight:.2f}",1,0,"C")
+    pdf.cell(col_purchase[3],8,f"{total_purchase_cost:.2f}",1,1,"C")
     pdf.ln(10)
 
     # Cutting Instructions
-    pdf.set_font("Arial", 'B', 11)
-    pdf.cell(0, 8, "Cutting Instructions", ln=True)
-    pdf.set_font("Arial", '', 8)
-    col_cut = [30, 140, 30]
-    headers_cut = ["Diameter", "Pattern (12m Bar Distribution)", "Count"]
-    for i, h in enumerate(headers_cut):
-        pdf.cell(col_cut[i], 8, h, 1, 0, "C")
+    pdf.set_font("Arial",'B',11)
+    pdf.cell(0,8,"Cutting Instructions",ln=True)
+    pdf.set_font("Arial",'',8)
+    col_cut=[30,140,30]
+    headers_cut=["Diameter","Pattern (12m Bar Distribution)","Count"]
+    for i,h in enumerate(headers_cut):
+        pdf.cell(col_cut[i],8,h,1,0,"C")
     pdf.ln()
-    for _, row in cutting_df.iterrows():
-        pdf.cell(col_cut[0], 8, f"{int(row['Diameter'])} mm", 1, 0, "C")
-        x = pdf.get_x()
-        y = pdf.get_y()
-        pdf.multi_cell(col_cut[1], 8, str(row["Pattern"]), 1)
-        pdf.set_xy(x + col_cut[1], y)
-        pdf.cell(col_cut[2], 8, f"{int(row['Count'])}", 1, 1, "C")
+    for _,row in cutting_df.iterrows():
+        pdf.cell(col_cut[0],8,f"{int(row['Diameter'])} mm",1,0,"C")
+        x=pdf.get_x()
+        y=pdf.get_y()
+        pdf.multi_cell(col_cut[1],8,str(row["Pattern"]),1)
+        pdf.set_xy(x+col_cut[1],y)
+        pdf.cell(col_cut[2],8,f"{int(row['Count'])}",1,1,"C")
     pdf.ln(10)
-    pdf.cell(0, 8, "Signature: ____________________", ln=True)
+    pdf.cell(0,8,"Signature: ____________________",ln=True)
 
-    filename = f"Rebar_Report_{datetime.date.today()}.pdf"
+    filename=f"Rebar_Report_{datetime.date.today()}.pdf"
     pdf.output(filename)
     return filename
 
@@ -192,41 +172,39 @@ def generate_pdf(main_df, waste_df, purchase_df, cutting_df, logo_path="logo.png
 st.set_page_config(layout="wide")
 st.title("Rebar Optimizer Pro")
 st.subheader("Created by Civil Engineer Moustafa Harmouch")
-
-price = st.number_input("Price per ton ($)", min_value=0.0, value=1000.0)
-data = {}
-
-for d in [6,8,10,12,14,16,18,20,22,25,32]:
+price=st.number_input("Price per ton ($)",min_value=0.0,value=1000.0)
+data={}
+for d in DIAMETERS:
     if f"rows_{d}" not in st.session_state:
-        st.session_state[f"rows_{d}"] = [{"Length":0.0,"Quantity":0}]
+        st.session_state[f"rows_{d}"]=[{"Length":0.0,"Quantity":0}]
     with st.expander(f"Diameter {d} mm"):
-        rows = st.session_state[f"rows_{d}"]
+        rows=st.session_state[f"rows_{d}"]
         for i in range(len(rows)):
-            col1,col2 = st.columns(2)
-            rows[i]["Length"] = col1.number_input(f"Length (m) [{i+1}]", value=float(rows[i]["Length"]), key=f"len_{d}_{i}")
-            rows[i]["Quantity"] = col2.number_input(f"Quantity [{i+1}]", value=int(rows[i]["Quantity"]), min_value=0, key=f"qty_{d}_{i}")
-        if st.button(f"Add Row Ø{d}", key=f"add_{d}"):
+            col1,col2=st.columns(2)
+            rows[i]["Length"]=col1.number_input(f"Length (m) [{i+1}]",value=float(rows[i]["Length"]),key=f"len_{d}_{i}")
+            rows[i]["Quantity"]=col2.number_input(f"Quantity [{i+1}]",value=int(rows[i]["Quantity"]),min_value=0,key=f"qty_{d}_{i}")
+        if st.button(f"Add Row Ø{d}",key=f"add_{d}"):
             st.session_state[f"rows_{d}"].append({"Length":0.0,"Quantity":0})
-        lengths = []
+        lengths=[]
         for r in rows:
             if r["Length"]>0 and r["Quantity"]>0:
                 lengths.extend([r["Length"]]*r["Quantity"])
         if lengths:
-            data[d] = lengths
+            data[d]=lengths
 
 if st.button("Run Optimization"):
     main_rows=[]
-    for key, rows in st.session_state.items():
+    for key,rows in st.session_state.items():
         if key.startswith("rows_"):
-            diameter = int(key.split("_")[1])
+            diameter=int(key.split("_")[1])
             for r in rows:
                 if r["Length"]>0 and r["Quantity"]>0:
                     weight=r["Length"]*r["Quantity"]*weight_per_meter(diameter)
                     main_rows.append({"Diameter":diameter,"Length":r["Length"],"Quantity":r["Quantity"],"Weight":round(weight,2)})
-    main_df = pd.DataFrame(main_rows)
+    main_df=pd.DataFrame(main_rows)
     if not main_df.empty:
-        main_df = main_df.groupby(["Diameter","Length"]).agg({"Quantity":"sum","Weight":"sum"}).reset_index()
-    waste_dict=defaultdict(lambda: {"count":0,"weight":0})
+        main_df=main_df.groupby(["Diameter","Length"]).agg({"Quantity":"sum","Weight":"sum"}).reset_index()
+    waste_dict=defaultdict(lambda:{"count":0,"weight":0})
     purchase_list=[]
     cutting_instr=[]
     for d,lengths in data.items():
@@ -263,22 +241,18 @@ if st.button("Run Optimization"):
     st.dataframe(purchase_df)
     st.markdown("### Cutting Instructions")
     st.dataframe(cutting_df)
-    pdf_file = generate_pdf(main_df,waste_df,purchase_df,cutting_df,logo_path="logo.png")
+    pdf_file=generate_pdf(main_df,waste_df,purchase_df,cutting_df,logo_path="logo.png")
     with open(pdf_file,"rb") as f:
         st.download_button("Download PDF Report",f,file_name=pdf_file)
 """
 
-# =========================
-# حفظ الكود في ملف app.py
-# =========================
-with open("app.py", "w") as f:
-    f.write(code)
+# حفظ الكود في app.py
+with open("app.py","w") as f:
+    f.write(app_code)
 
-# =========================
-# تشغيل Streamlit عبر ngrok
-# =========================
+# تشغيل Streamlit مع ngrok للحصول على رابط عام للهاتف
 public_url = ngrok.connect(8501)
-!streamlit run app.py &
+os.system("streamlit run app.py &")
 
-print("Open this link on your phone to access the app:")
+print("✨ افتح هذا الرابط على هاتفك لتشغيل التطبيق:")
 print(public_url)
