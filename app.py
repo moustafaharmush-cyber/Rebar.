@@ -220,7 +220,7 @@ if st.button("Run Optimization"):
     pdf.set_font("Arial",'',10)
     pdf.cell(0,8,f"Report No: {report_number}", ln=True)
     pdf.cell(0,8,f"Date: {date.today()}", ln=True)
-    pdf.ln(5)
+    pdf.ln(10)  # زيادة المسافة قبل الجداول
 
     # ==== وظيفة رسم الجداول مع الأعمدة الموسعة وإجماليات ====
     def draw_table(df, headers, col_widths, title="", sum_columns=[]):
@@ -228,12 +228,12 @@ if st.button("Run Optimization"):
             pdf.set_font("Arial",'B',16)
             pdf.set_text_color(0,51,102)
             pdf.cell(0,10,title,ln=True,align="L")
-            pdf.ln(2)
+            pdf.ln(8)  # زيادة المسافة بعد العنوان
         pdf.set_fill_color(0,51,102)
         pdf.set_text_color(255,255,255)
         pdf.set_font("Arial",'B',10)
         for i,h in enumerate(headers):
-            pdf.cell(col_widths[i],8,h,1,0,"C",fill=True)
+            pdf.cell(col_widths[i],10,h,1,0,"C",fill=True)
         pdf.ln()
         pdf.set_text_color(0,0,0)
         fill=False
@@ -257,13 +257,13 @@ if st.button("Run Optimization"):
                     pdf.cell(col_widths[i],8,"TOTAL",1,0,"C",fill=True)
                 else:
                     pdf.cell(col_widths[i],8,"",1,0,"C",fill=True)
-            pdf.ln(4)
+            pdf.ln(10)  # مسافة بعد صف الإجمالي
 
     # ==== رسم الجداول الموسعة ====
-    draw_table(main_df, ["Diameter","Length (m)","Quantity","Weight (kg)"], [45,50,45,50], title="MainBar", sum_columns=["Weight (kg)"])
-    draw_table(waste_df, ["Diameter","Waste Length (m)","Number of Bars","Waste Weight (kg)"], [45,55,50,50], title="Waste Bars", sum_columns=["Waste Weight (kg)"])
-    draw_table(purchase_df, ["Diameter","Bars","Weight (kg)","Cost"], [45,45,50,50], title="Purchase 12m Bars", sum_columns=["Weight (kg)","Cost"])
-    draw_table(cutting_df, ["Diameter","Pattern","Count"], [45,180,45], title="Cutting Instructions")
+    draw_table(main_df, ["Diameter","Length (m)","Quantity","Weight (kg)"], [50,55,50,55], title="MainBar", sum_columns=["Weight (kg)"])
+    draw_table(waste_df, ["Diameter","Waste Length (m)","Number of Bars","Waste Weight (kg)"], [50,60,55,55], title="Waste Bars", sum_columns=["Waste Weight (kg)"])
+    draw_table(purchase_df, ["Diameter","Bars","Weight (kg)","Cost"], [50,50,55,55], title="Purchase 12m Bars", sum_columns=["Weight (kg)","Cost"])
+    draw_table(cutting_df, ["Diameter","Pattern","Count"], [50,200,50], title="Cutting Instructions")
 
     pdf.output(pdf_file)
     with open(pdf_file,"rb") as f:
