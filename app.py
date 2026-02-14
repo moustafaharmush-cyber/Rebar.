@@ -198,7 +198,7 @@ if st.button("Run Optimization"):
     pdf.cell(0,8,f"Date: {date.today()}", ln=True)
     pdf.ln(10)
 
-    # ==== دالة رسم الجداول العامة ====
+    # ==== دالة رسم جميع الجداول العامة ====
     def draw_table(df, headers, col_widths, title="", sum_columns=[]):
         if df.empty:
             return
@@ -248,20 +248,23 @@ if st.button("Run Optimization"):
                     pdf.cell(col_widths[i],12,"",1,0,"C",fill=True)
             pdf.ln(12)
 
-    # ==== جدول Cutting Instructions النهائي (كل الخلايا ارتفاع ثابت 20) ====
-    def draw_cutting_table(df, headers, col_widths, title="Cutting Instructions"):
+    # ==== دالة رسم جدول Cutting Instructions (ارتفاع ثابت 20) ====
+    def draw_cutting_table_fixed(df, headers, col_widths, title="Cutting Instructions"):
         if df.empty:
             return
         pdf.set_font("Arial",'B',16)
         pdf.set_text_color(0,51,102)
         pdf.cell(0,10,title,ln=True,align="L")
         pdf.ln(5)
+
+        # الهيدر
         pdf.set_fill_color(0,51,102)
         pdf.set_text_color(255,255,255)
         pdf.set_font("Arial",'B',10)
         for i,h in enumerate(headers):
             pdf.cell(col_widths[i],20,h,1,0,"C",fill=True)
         pdf.ln()
+
         pdf.set_text_color(0,0,0)
         fill=False
 
@@ -272,25 +275,26 @@ if st.button("Run Optimization"):
                     pdf.cell(col_widths[i],20,h,1,0,"C",fill=True)
                 pdf.ln()
                 pdf.set_text_color(0,0,0)
-            pdf.set_fill_color(245,245,245) if fill else pdf.set_fill_color(255,255,255)
 
+            pdf.set_fill_color(245,245,245) if fill else pdf.set_fill_color(255,255,255)
             x_start = pdf.get_x()
             y_start = pdf.get_y()
+            row_height = 20  # ارتفاع ثابت 20 لكل الصف
 
+            # رسم كل عمود
             for i,col in enumerate(headers):
                 value=str(row[col]) if col in df.columns else ""
-                # كل الخلايا ارتفاعها ثابت 20
-                pdf.multi_cell(col_widths[i], 10, value, 1, 'C', fill=fill)
+                pdf.multi_cell(col_widths[i],5,value,1,'C',fill=fill)
                 pdf.set_xy(x_start + sum(col_widths[:i+1]), y_start)
 
-            pdf.ln(20)
+            pdf.ln(row_height)
             fill = not fill
 
-    # ==== رسم كل الجداول ====
+    # ==== رسم جميع الجداول ====
     draw_table(main_df, ["Diameter","Length (m)","Quantity","Weight (kg)"], [35,45,35,35], title="MainBar", sum_columns=["Weight (kg)"])
     draw_table(waste_df, ["Diameter","Waste Length (m)","Number of Bars","Waste Weight (kg)"], [35,50,40,40], title="Waste Bars", sum_columns=["Waste Weight (kg)"])
     draw_table(purchase_df, ["Diameter","Bars","Weight (kg)","Cost"], [35,35,40,40], title="Purchase 12m Bars", sum_columns=["Weight (kg)","Cost"])
-    draw_cutting_table(cutting_df, ["Diameter","Pattern","Count"], [35,100,35])
+    draw_cutting_table_fixed(cutting_df, ["Diameter","Pattern","Count"], [35,100,35])
 
     pdf.output(pdf_file)
     with open(pdf_file,"rb") as f:
