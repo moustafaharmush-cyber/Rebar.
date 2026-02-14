@@ -151,11 +151,11 @@ if st.button("Run Optimization"):
     st.dataframe(cutting_df)
 
     # =========================
-    # PDF Generator
+    # PDF Generator Portrait
     # =========================
     pdf_file = "Rebar_Report.pdf"
-    pdf = PDF(orientation='L')
-    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf = PDF(orientation='P')  # Portrait
+    pdf.set_auto_page_break(auto=True, margin=20)
 
     logo_path = "logo.png"
     signature_path = "signature.png"
@@ -169,7 +169,7 @@ if st.button("Run Optimization"):
     pdf.set_fill_color(230,240,255)
     pdf.rect(0,0,pdf.w,pdf.h,"F")
     pdf.set_fill_color(0,51,102)
-    pdf.rect(0,0,25,pdf.h,"F")
+    pdf.rect(0,0,20,pdf.h,"F")
     try:
         pdf.image(logo_path, x=pdf.w/2-35, y=10, w=70)
     except:
@@ -180,7 +180,7 @@ if st.button("Run Optimization"):
     pdf.cell(0,20,"Rebar Optimization Report",ln=True,align="C")
     pdf.set_draw_color(0,51,102)
     pdf.set_line_width(1)
-    pdf.line(80, pdf.get_y()+5, pdf.w-80, pdf.get_y()+5)
+    pdf.line(60, pdf.get_y()+5, pdf.w-60, pdf.get_y()+5)
     pdf.ln(20)
     pdf.set_font("Arial",'B',24)
     pdf.cell(0,15,company_name,ln=True,align="C")
@@ -213,27 +213,27 @@ if st.button("Run Optimization"):
     pdf.set_xy(pdf.w/2 - 60, start_y)
     pdf.cell(120,15,"Rebar Optimization Report", ln=0, align="C")
     try:
-        pdf.image(logo_path, x=pdf.w-75, y=start_y, w=65)
+        pdf.image(logo_path, x=pdf.w - 60, y=start_y, w=50)
     except:
         pass
     pdf.ln(25)
     pdf.set_font("Arial",'',10)
     pdf.cell(0,8,f"Report No: {report_number}", ln=True)
     pdf.cell(0,8,f"Date: {date.today()}", ln=True)
-    pdf.ln(10)  # زيادة المسافة قبل الجداول
+    pdf.ln(10)
 
-    # ==== وظيفة رسم الجداول مع الأعمدة الموسعة وإجماليات ====
+    # ==== دالة رسم الجداول ====
     def draw_table(df, headers, col_widths, title="", sum_columns=[]):
         if title:
             pdf.set_font("Arial",'B',16)
             pdf.set_text_color(0,51,102)
             pdf.cell(0,10,title,ln=True,align="L")
-            pdf.ln(8)  # زيادة المسافة بعد العنوان
+            pdf.ln(10)  # زيادة المسافة بعد العنوان
         pdf.set_fill_color(0,51,102)
         pdf.set_text_color(255,255,255)
         pdf.set_font("Arial",'B',10)
         for i,h in enumerate(headers):
-            pdf.cell(col_widths[i],10,h,1,0,"C",fill=True)
+            pdf.cell(col_widths[i],12,h,1,0,"C",fill=True)
         pdf.ln()
         pdf.set_text_color(0,0,0)
         fill=False
@@ -242,7 +242,7 @@ if st.button("Run Optimization"):
             pdf.set_fill_color(245,245,245)
             for i,col in enumerate(headers):
                 value=str(row[col]) if col in df.columns else ""
-                pdf.cell(col_widths[i],8,value,1,0,"C",fill=fill)
+                pdf.cell(col_widths[i],10,value,1,0,"C",fill=fill)
                 if col in sum_columns:
                     totals[col]+=float(row[col])
             pdf.ln()
@@ -252,14 +252,14 @@ if st.button("Run Optimization"):
             pdf.set_font("Arial",'B',10)
             for i,col in enumerate(headers):
                 if col in sum_columns:
-                    pdf.cell(col_widths[i],8,f"{totals[col]:.2f}",1,0,"C",fill=True)
+                    pdf.cell(col_widths[i],10,f"{totals[col]:.2f}",1,0,"C",fill=True)
                 elif i==0:
-                    pdf.cell(col_widths[i],8,"TOTAL",1,0,"C",fill=True)
+                    pdf.cell(col_widths[i],10,"TOTAL",1,0,"C",fill=True)
                 else:
-                    pdf.cell(col_widths[i],8,"",1,0,"C",fill=True)
-            pdf.ln(10)  # مسافة بعد صف الإجمالي
+                    pdf.cell(col_widths[i],10,"",1,0,"C",fill=True)
+            pdf.ln(12)
 
-    # ==== رسم الجداول الموسعة ====
+    # ==== رسم الجداول ====
     draw_table(main_df, ["Diameter","Length (m)","Quantity","Weight (kg)"], [50,55,50,55], title="MainBar", sum_columns=["Weight (kg)"])
     draw_table(waste_df, ["Diameter","Waste Length (m)","Number of Bars","Waste Weight (kg)"], [50,60,55,55], title="Waste Bars", sum_columns=["Waste Weight (kg)"])
     draw_table(purchase_df, ["Diameter","Bars","Weight (kg)","Cost"], [50,50,55,55], title="Purchase 12m Bars", sum_columns=["Weight (kg)","Cost"])
