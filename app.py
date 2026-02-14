@@ -193,7 +193,7 @@ if st.button("Run Optimization"):
     pdf.set_xy(10, start_y)
     pdf.cell(80,15,"Rebar Optimization Report", ln=0, align="L")
     try:
-        pdf.image(logo_path, x=(pdf.w/2)-25, y=start_y+35, w=50)  # اللوجو أسفل العنوان بمقدار 30 وحدة
+        pdf.image(logo_path, x=(pdf.w/2)-25, y=start_y+35, w=50)  # اللوجو أسفل العنوان
     except:
         pass
     pdf.set_xy(pdf.w-110, start_y)
@@ -204,7 +204,7 @@ if st.button("Run Optimization"):
     pdf.cell(0,8,f"Date: {date.today()}", ln=True)
     pdf.ln(10)
 
-    # ==== دالة رسم الجداول الآمنة ====
+    # ==== دالة رسم الجداول الآمنة مع multi_cell لعمود Pattern ====
     def draw_table(df, headers, col_widths, title="", sum_columns=[]):
         if df.empty:
             return
@@ -213,6 +213,7 @@ if st.button("Run Optimization"):
             pdf.set_text_color(0,51,102)
             pdf.cell(0,10,title,ln=True,align="L")
             pdf.ln(5)
+        # رسم رؤوس الأعمدة
         pdf.set_fill_color(0,51,102)
         pdf.set_text_color(255,255,255)
         pdf.set_font("Arial",'B',10)
@@ -222,6 +223,7 @@ if st.button("Run Optimization"):
         pdf.set_text_color(0,0,0)
         fill=False
         totals={col:0 for col in sum_columns if col in df.columns}
+
         for idx,row in df.iterrows():
             if pdf.get_y() > pdf.h - 30:
                 pdf.add_page()
@@ -229,17 +231,29 @@ if st.button("Run Optimization"):
                     pdf.cell(col_widths[i],12,h,1,0,"C",fill=True)
                 pdf.ln()
                 pdf.set_text_color(0,0,0)
+
             pdf.set_fill_color(245,245,245) if fill else pdf.set_fill_color(255,255,255)
+
             for i,col in enumerate(headers):
-                value=str(row[col]) if col in df.columns else ""
-                pdf.cell(col_widths[i],10,value,1,0,"C",fill=fill)
+                value = str(row[col]) if col in df.columns else ""
+                # multi_cell فقط لعمود Pattern
+                if col=="Pattern":
+                    x = pdf.get_x()
+                    y = pdf.get_y()
+                    pdf.multi_cell(col_widths[i],8,value,1,align="C",fill=fill)
+                    pdf.set_xy(x+col_widths[i], y)
+                else:
+                    pdf.cell(col_widths[i],8,value,1,0,"C",fill=fill)
+
                 if col in totals:
                     try:
-                        totals[col]+=float(row[col])
+                        totals[col] += float(row[col])
                     except:
                         pass
             pdf.ln()
             fill=not fill
+
+        # TOTAL row اذا وجد
         if totals:
             pdf.set_fill_color(200,200,200)
             pdf.set_font("Arial",'B',10)
@@ -256,7 +270,7 @@ if st.button("Run Optimization"):
     draw_table(main_df, ["Diameter","Length (m)","Quantity","Weight (kg)"], [35,45,35,35], title="MainBar", sum_columns=["Weight (kg)"])
     draw_table(waste_df, ["Diameter","Waste Length (m)","Number of Bars","Waste Weight (kg)"], [35,50,40,40], title="Waste Bars", sum_columns=["Waste Weight (kg)"])
     draw_table(purchase_df, ["Diameter","Bars","Weight (kg)","Cost"], [35,35,40,40], title="Purchase 12m Bars", sum_columns=["Weight (kg)","Cost"])
-    draw_table(cutting_df, ["Diameter","Pattern","Count"], [20,140,10], title="Cutting Instructions")
+    draw_table(cutting_df, ["Diameter","Pattern","Count"], [35,100,35], title="Cutting Instructions")
 
     pdf.output(pdf_file)
     with open(pdf_file,"rb") as f:
