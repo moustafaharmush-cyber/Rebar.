@@ -99,10 +99,12 @@ if st.button("Run Optimization"):
             for r in rows:
                 if r["Length"]>0 and r["Quantity"]>0:
                     weight = r["Length"]*r["Quantity"]*weight_per_meter(diameter)
-                    main_rows.append({"Diameter":f"{diameter} mm",
-                                      "Length (m)":r["Length"],
-                                      "Quantity":r["Quantity"],
-                                      "Weight (kg)":round(weight,2)})
+                    main_rows.append({
+                        "Diameter": f"{diameter} mm",
+                        "Length (m)": r["Length"],
+                        "Quantity": r["Quantity"],
+                        "Weight (kg)": round(weight,2)
+                    })
     main_df = pd.DataFrame(main_rows)
     if not main_df.empty:
         main_df = main_df.groupby(["Diameter","Length (m)"]).agg({"Quantity":"sum","Weight (kg)":"sum"}).reset_index()
@@ -154,7 +156,7 @@ if st.button("Run Optimization"):
     # PDF Generator Portrait
     # =========================
     pdf_file = "Rebar_Report.pdf"
-    pdf = PDF(orientation='P')  # Portrait
+    pdf = PDF(orientation='P')
     pdf.set_auto_page_break(auto=True, margin=20)
 
     logo_path = "logo.png"
@@ -167,7 +169,7 @@ if st.button("Run Optimization"):
     pdf.set_fill_color(230,240,255)
     pdf.rect(0,0,pdf.w,pdf.h,"F")
     try:
-        pdf.image(logo_path, x=pdf.w/2-35, y=60, w=70)  # تم رفع اللوجو قليلاً لأسفل
+        pdf.image(logo_path, x=pdf.w/2-35, y=40, w=70)  # رفع اللوجو أعلى
     except:
         pass
     pdf.ln(120)
@@ -185,7 +187,7 @@ if st.button("Run Optimization"):
     pdf.cell(0,10,f"Report No: {report_number}",ln=True,align="C")
     pdf.cell(0,10,f"Date: {date.today()}",ln=True,align="C")
 
-    # ==== الصفحة الثانية مع الهيدر الجديد ====
+    # ==== الصفحة الثانية مع الهيدر ====
     pdf.add_page()
     start_y = 10
     pdf.set_y(start_y)
@@ -194,7 +196,7 @@ if st.button("Run Optimization"):
     pdf.set_xy(10, start_y)
     pdf.cell(80,15,"Rebar Optimization Report", ln=0, align="L")
     try:
-        pdf.image(logo_path, x=(pdf.w/2)-25, y=start_y, w=50)
+        pdf.image(logo_path, x=(pdf.w/2)-25, y=start_y+5, w=50)  # إنزال اللوجو قليلاً
     except:
         pass
     pdf.set_xy(pdf.w-110, start_y)
@@ -205,7 +207,7 @@ if st.button("Run Optimization"):
     pdf.cell(0,8,f"Date: {date.today()}", ln=True)
     pdf.ln(10)
 
-    # ==== دالة رسم الجداول مع متابعة العنوان عند Page Break ====
+    # ==== دالة رسم الجداول ====
     def draw_table(df, headers, col_widths, title="", sum_columns=[]):
         if title:
             pdf.set_font("Arial",'B',16)
@@ -259,11 +261,11 @@ if st.button("Run Optimization"):
                     pdf.cell(col_widths[i],10,"",1,0,"C",fill=True)
             pdf.ln(12)
 
-    # ==== رسم الجداول ====
+    # ==== رسم جميع الجداول ====
     draw_table(main_df, ["Diameter","Length (m)","Quantity","Weight (kg)"], [35,45,35,35], title="MainBar", sum_columns=["Weight (kg)"])
     draw_table(waste_df, ["Diameter","Waste Length (m)","Number of Bars","Waste Weight (kg)"], [35,50,40,40], title="Waste Bars", sum_columns=["Waste Weight (kg)"])
     draw_table(purchase_df, ["Diameter","Bars","Weight (kg)","Cost"], [35,35,40,40], title="Purchase 12m Bars", sum_columns=["Weight (kg)","Cost"])
-    draw_table(cutting_df, ["Diameter","Pattern","Count"], [35,150,35], title="Cutting Instructions")
+    draw_table(cutting_df, ["Diameter","Pattern","Count"], [35,100,35], title="Cutting Instructions")  # ✅ تم تعديل العرض من 150→100
 
     pdf.output(pdf_file)
     with open(pdf_file,"rb") as f:
