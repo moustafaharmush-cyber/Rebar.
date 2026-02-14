@@ -41,7 +41,7 @@ def optimize_cutting(lengths):
     return best_solution
 
 # =========================
-# PDF Generator مع تصميم هندسي
+# PDF Generator مصحح ومرن
 # =========================
 def generate_pdf(main_df,waste_df,purchase_df,cutting_df,logo_path="logo.png"):
     company_name="NovaStruct Company"
@@ -79,6 +79,7 @@ def generate_pdf(main_df,waste_df,purchase_df,cutting_df,logo_path="logo.png"):
     pdf.cell(0,8,f"Date: {datetime.date.today()}",ln=True)
     pdf.ln(5)
 
+    # دالة مرنة لرسم الجداول
     def draw_table(df,headers,col_widths):
         pdf.set_fill_color(0,51,102)
         pdf.set_text_color(255,255,255)
@@ -92,10 +93,17 @@ def generate_pdf(main_df,waste_df,purchase_df,cutting_df,logo_path="logo.png"):
         for _,row in df.iterrows():
             pdf.set_fill_color(245,245,245)
             for i,col in enumerate(headers):
-                pdf.cell(col_widths[i],8,str(row[col]),1,0,"C",fill=fill)
+                value = str(row[col]) if col in df.columns else ""
+                pdf.cell(col_widths[i],8,value,1,0,"C",fill=fill)
             pdf.ln()
             fill=not fill
         pdf.ln(5)
+
+    # =========================
+    # تعديل أسماء الأعمدة لتطابق الجدول
+    main_df = main_df.rename(columns={"Weight":"Weight (kg)"})
+    waste_df = waste_df.rename(columns={"Waste Weight":"Waste Weight (kg)"})
+    purchase_df = purchase_df.rename(columns={"Weight":"Weight (kg)"})
 
     # MainBar
     pdf.set_font("Arial",'B',11)
