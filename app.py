@@ -158,65 +158,55 @@ if st.button("Run Optimization"):
     pdf.set_auto_page_break(auto=True, margin=20)
 
     logo_path = "logo.png"
-    signature_path = "signature.png"
     company_name="NovaStruct Company"
     engineer_name="Civil Engineer Moustafa Harmouch"
-    signature="Structural Engineering Specialist"
     report_number=f"NS-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
     # ==== صفحة الغلاف ====
     pdf.add_page()
     pdf.set_fill_color(230,240,255)
     pdf.rect(0,0,pdf.w,pdf.h,"F")
-    pdf.set_fill_color(0,51,102)
-    pdf.rect(0,0,20,pdf.h,"F")
     try:
-        pdf.image(logo_path, x=pdf.w/2-35, y=10, w=70)
+        pdf.image(logo_path, x=pdf.w/2-35, y=30, w=70)
     except:
         pass
-    pdf.ln(90)
+    pdf.ln(100)
     pdf.set_font("Arial",'B',38)
     pdf.set_text_color(0,51,102)
     pdf.cell(0,20,"Rebar Optimization Report",ln=True,align="C")
-    pdf.set_draw_color(0,51,102)
-    pdf.set_line_width(1)
-    pdf.line(60, pdf.get_y()+5, pdf.w-60, pdf.get_y()+5)
     pdf.ln(20)
-    pdf.set_font("Arial",'B',24)
+    pdf.set_font("Arial",'B',26)
     pdf.cell(0,15,company_name,ln=True,align="C")
     pdf.ln(10)
     pdf.set_font("Arial",'B',26)
-    pdf.set_text_color(40,40,40)
     pdf.cell(0,15,engineer_name,ln=True,align="C")
-    try:
-        pdf.image(signature_path, x=pdf.w/2-40, y=pdf.get_y(), w=80)
-    except:
-        pass
-    pdf.set_font("Arial",'I',18)
-    pdf.set_text_color(90,90,90)
-    pdf.ln(20)
-    pdf.cell(0,10,signature,ln=True,align="C")
-    pdf.set_text_color(0,0,0)
-    pdf.ln(15)
     pdf.set_font("Arial",'',16)
+    pdf.ln(20)
     pdf.cell(0,10,f"Report No: {report_number}",ln=True,align="C")
     pdf.cell(0,10,f"Date: {date.today()}",ln=True,align="C")
 
-    # ==== الصفحة الثانية مع الهيدر الأفقي ====
+    # ==== الصفحة الثانية مع الهيدر الجديد ====
     pdf.add_page()
     start_y = 10
     pdf.set_y(start_y)
     pdf.set_font("Arial",'B',18)
     pdf.set_text_color(0,0,0)
+
+    # العنوان الرئيسي على اليسار
     pdf.set_xy(10, start_y)
-    pdf.cell(60,15, company_name, ln=0, align="L")
-    pdf.set_xy(pdf.w/2 - 60, start_y)
-    pdf.cell(120,15,"Rebar Optimization Report", ln=0, align="C")
+    pdf.cell(80,15,"Rebar Optimization Report", ln=0, align="L")
+
+    # اللوجو في المنتصف
     try:
-        pdf.image(logo_path, x=pdf.w - 60, y=start_y, w=50)
+        pdf.image(logo_path, x=(pdf.w/2)-25, y=start_y, w=50)
     except:
         pass
-    pdf.ln(25)
+
+    # اسم الشركة على اليمين
+    pdf.set_xy(pdf.w-110, start_y)
+    pdf.cell(100,15, "NovaStruct Company", ln=0, align="R")
+    pdf.ln(30)
+
     pdf.set_font("Arial",'',10)
     pdf.cell(0,8,f"Report No: {report_number}", ln=True)
     pdf.cell(0,8,f"Date: {date.today()}", ln=True)
@@ -228,7 +218,7 @@ if st.button("Run Optimization"):
             pdf.set_font("Arial",'B',16)
             pdf.set_text_color(0,51,102)
             pdf.cell(0,10,title,ln=True,align="L")
-            pdf.ln(10)  # زيادة المسافة بعد العنوان
+            pdf.ln(10)
         pdf.set_fill_color(0,51,102)
         pdf.set_text_color(255,255,255)
         pdf.set_font("Arial",'B',10)
@@ -239,7 +229,7 @@ if st.button("Run Optimization"):
         fill=False
         totals={col:0 for col in sum_columns}
         for _, row in df.iterrows():
-            pdf.set_fill_color(245,245,245)
+            pdf.set_fill_color(245,245,245) if fill else pdf.set_fill_color(255,255,255)
             for i,col in enumerate(headers):
                 value=str(row[col]) if col in df.columns else ""
                 pdf.cell(col_widths[i],10,value,1,0,"C",fill=fill)
@@ -259,11 +249,11 @@ if st.button("Run Optimization"):
                     pdf.cell(col_widths[i],10,"",1,0,"C",fill=True)
             pdf.ln(12)
 
-    # ==== رسم الجداول ====
-    draw_table(main_df, ["Diameter","Length (m)","Quantity","Weight (kg)"], [50,55,50,55], title="MainBar", sum_columns=["Weight (kg)"])
-    draw_table(waste_df, ["Diameter","Waste Length (m)","Number of Bars","Waste Weight (kg)"], [50,60,55,55], title="Waste Bars", sum_columns=["Waste Weight (kg)"])
+    # ==== رسم الجداول مع الأعمدة الموسعة ====
+    draw_table(main_df, ["Diameter","Length (m)","Quantity","Weight (kg)"], [50,60,50,50], title="MainBar", sum_columns=["Weight (kg)"])
+    draw_table(waste_df, ["Diameter","Waste Length (m)","Number of Bars","Waste Weight (kg)"], [50,65,55,55], title="Waste Bars", sum_columns=["Waste Weight (kg)"])
     draw_table(purchase_df, ["Diameter","Bars","Weight (kg)","Cost"], [50,50,55,55], title="Purchase 12m Bars", sum_columns=["Weight (kg)","Cost"])
-    draw_table(cutting_df, ["Diameter","Pattern","Count"], [50,200,50], title="Cutting Instructions")
+    draw_table(cutting_df, ["Diameter","Pattern","Count"], [50,180,50], title="Cutting Instructions")
 
     pdf.output(pdf_file)
     with open(pdf_file,"rb") as f:
