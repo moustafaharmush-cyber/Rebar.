@@ -144,12 +144,6 @@ if st.button("Run Optimization"):
     purchase_df=pd.DataFrame(purchase_list, columns=["Diameter","Bars","Weight (kg)","Cost"])
     cutting_df=pd.DataFrame(cutting_instr, columns=["Diameter","Pattern","Count"])
 
-    # ---------- التحقق من البيانات قبل PDF ----------
-    st.write("Main DataFrame:", main_df)
-    st.write("Waste DataFrame:", waste_df)
-    st.write("Purchase DataFrame:", purchase_df)
-    st.write("Cutting DataFrame:", cutting_df)
-
     st.success("Optimization Completed Successfully ✅")
 
     # ---------- PDF Generator Portrait ----------
@@ -196,8 +190,8 @@ if st.button("Run Optimization"):
         pdf.image(logo_path, x=(pdf.w/2)-25, y=start_y+35, w=50)
     except:
         pass
-    pdf.set_xy(pdf.w-110, start_y)
-    pdf.cell(100,15, company_name, ln=0, align="R")
+    pdf.set_xy(pdf.w-210, start_y)
+    pdf.cell(200,15, company_name, ln=0, align="R")
     pdf.ln(50)
     pdf.set_font("Arial",'',10)
     pdf.cell(0,8,f"Report No: {report_number}", ln=True)
@@ -213,7 +207,6 @@ if st.button("Run Optimization"):
             pdf.set_text_color(0,51,102)
             pdf.cell(0,10,title,ln=True,align="L")
             pdf.ln(5)
-        # رؤوس الأعمدة
         pdf.set_fill_color(0,51,102)
         pdf.set_text_color(255,255,255)
         pdf.set_font("Arial",'B',10)
@@ -231,9 +224,7 @@ if st.button("Run Optimization"):
                     pdf.cell(col_widths[i],12,h,1,0,"C",fill=True)
                 pdf.ln()
                 pdf.set_text_color(0,0,0)
-
             pdf.set_fill_color(245,245,245) if fill else pdf.set_fill_color(255,255,255)
-
             for i,col in enumerate(headers):
                 value=str(row[col]) if col in df.columns else ""
                 pdf.cell(col_widths[i],12,value,1,0,"C",fill=fill)
@@ -265,7 +256,6 @@ if st.button("Run Optimization"):
         pdf.set_text_color(0,51,102)
         pdf.cell(0,10,title,ln=True,align="L")
         pdf.ln(5)
-        # رؤوس الأعمدة
         pdf.set_fill_color(0,51,102)
         pdf.set_text_color(255,255,255)
         pdf.set_font("Arial",'B',10)
@@ -292,10 +282,10 @@ if st.button("Run Optimization"):
                     pdf.set_xy(x+col_widths[i],y)
                 else:
                     pdf.cell(col_widths[i],20,value,1,0,'C',fill=fill)
-            pdf.ln(20)
+            pdf.ln(20)  # ارتفاع ثابت لكل صف
             fill = not fill
 
-    # ==== رسم كل الجداول ====
+    # ==== رسم جميع الجداول ====
     draw_table(main_df, ["Diameter","Length (m)","Quantity","Weight (kg)"], [35,45,35,35], title="MainBar", sum_columns=["Weight (kg)"])
     draw_table(waste_df, ["Diameter","Waste Length (m)","Number of Bars","Waste Weight (kg)"], [35,50,40,40], title="Waste Bars", sum_columns=["Waste Weight (kg)"])
     draw_table(purchase_df, ["Diameter","Bars","Weight (kg)","Cost"], [35,35,40,40], title="Purchase 12m Bars", sum_columns=["Weight (kg)","Cost"])
