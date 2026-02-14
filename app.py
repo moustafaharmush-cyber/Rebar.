@@ -240,8 +240,10 @@ if st.button("Run Optimization"):
             "Weight":"Weight (kg)"
         })
 
-        main_df["Length (m)"]=main_df["Length (m)"].map(lambda x:f"{x:.2f}")
-        main_df["Weight (kg)"]=main_df["Weight (kg)"].map(lambda x:f"{x:.2f}")
+        main_df["Diameter"] = main_df["Diameter"].astype(int).astype(str) + " mm"
+        main_df["Length (m)"] = main_df["Length (m)"].map(lambda x:str(round(x,2)))
+        main_df["Quantity"] = main_df["Quantity"].astype(int).astype(str)
+        main_df["Weight (kg)"] = main_df["Weight (kg)"].map(lambda x:str(round(x,2)))
 
     waste_dict=defaultdict(lambda:{"count":0,"weight":0})
     purchase_list=[]
@@ -285,7 +287,10 @@ if st.button("Run Optimization"):
     cutting_df=pd.DataFrame(cutting_instr,
         columns=["Diameter","Pattern","Count"])
 
-    # ===== Totals =====
+    waste_df["Diameter"] = waste_df["Diameter"].astype(int).astype(str) + " mm"
+    purchase_df["Diameter"] = purchase_df["Diameter"].astype(int).astype(str) + " mm"
+    cutting_df["Diameter"] = cutting_df["Diameter"].astype(int).astype(str) + " mm"
+
     total_main_weight = sum(float(w) for w in main_df["Weight (kg)"]) if not main_df.empty else 0
     total_purchase_weight = purchase_df["Weight (kg)"].sum() if not purchase_df.empty else 0
     total_cost = purchase_df["Cost"].sum() if not purchase_df.empty else 0
