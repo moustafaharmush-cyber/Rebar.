@@ -41,7 +41,7 @@ def optimize_cutting(lengths):
     return best_solution
 
 # =========================
-# PDF Class
+# PDF Class مع الهيدر والفوتر
 # =========================
 class PDF(FPDF):
     def header(self):
@@ -61,7 +61,7 @@ class PDF(FPDF):
             self.cell(0,10,"NovaStruct Company | Structural Engineering Solutions",0,0,"R")
 
 # =========================
-# Streamlit UI
+# واجهة Streamlit
 # =========================
 st.set_page_config(layout="wide")
 st.title("Rebar Optimizer Pro")
@@ -89,7 +89,7 @@ for d in DIAMETERS:
             data[d] = lengths
 
 # =========================
-# Run Optimization
+# تشغيل التحسين
 # =========================
 if st.button("Run Optimization"):
     main_rows=[]
@@ -157,8 +157,8 @@ if st.button("Run Optimization"):
     pdf = PDF(orientation='L')
     pdf.set_auto_page_break(auto=True, margin=15)
 
-    logo_path = "logo.png"        # شعار الشركة
-    signature_path = "signature.png"  # صورة توقيع المهندس
+    logo_path = "logo.png"
+    signature_path = "signature.png"
     company_name="NovaStruct Company"
     engineer_name="Civil Engineer Moustafa Harmouch"
     signature="Structural Engineering Specialist"
@@ -200,20 +200,21 @@ if st.button("Run Optimization"):
     pdf.ln(15)
     pdf.set_font("Arial",'',16)
     pdf.cell(0,10,f"Report No: {report_number}",ln=True,align="C")
-    pdf.cell(0,10,f"Date: {date.today()}",ln=True,align="C")  # ✅ تم التصحيح هنا
+    pdf.cell(0,10,f"Date: {date.today()}",ln=True,align="C")
 
-    # ==== صفحة التقرير ====
+    # ==== صفحة التقرير مع الهيدر الأفقي ====
     pdf.add_page()
     start_y = 10
     pdf.set_y(start_y)
     pdf.set_font("Arial",'B',18)
     pdf.set_text_color(0,0,0)
+
     pdf.set_x(10)
     pdf.cell(0,10,company_name,ln=0,align="L")
     pdf.set_x(0)
     pdf.cell(0,10,"Rebar Optimization Report",ln=0,align="C")
     try:
-        pdf.image(logo_path, x=pdf.w-75, y=start_y-2, w=65)
+        pdf.image(logo_path, x=pdf.w-75, y=start_y, w=65)
     except:
         pass
     pdf.ln(25)
@@ -222,38 +223,55 @@ if st.button("Run Optimization"):
     pdf.cell(0,8,f"Date: {date.today()}",ln=True)
     pdf.ln(5)
 
-    # ==== وظيفة رسم الجداول ====
-    def draw_table(df,headers,col_widths):
+    # ==== وظيفة رسم الجداول مع الإجماليات ====
+    def draw_table(df, headers, col_widths, title="", sum_columns=[]):
+        # عنوان الجدول
+        if title:
+            pdf.set_font("Arial",'B',16)
+            pdf.set_text_color(0,51,102)
+            pdf.cell(0,10,title,ln=True,align="L")
+            pdf.ln(2)
+
+        # رأس الجدول
         pdf.set_fill_color(0,51,102)
         pdf.set_text_color(255,255,255)
-        pdf.set_font("Arial",'B',9)
+        pdf.set_font("Arial",'B',10)
         for i,h in enumerate(headers):
             pdf.cell(col_widths[i],8,h,1,0,"C",fill=True)
         pdf.ln()
+
+        # بيانات الجدول
         pdf.set_text_color(0,0,0)
         fill=False
-        for _,row in df.iterrows():
+        totals={col:0 for col in sum_columns}
+        for _, row in df.iterrows():
             pdf.set_fill_color(245,245,245)
             for i,col in enumerate(headers):
                 value=str(row[col]) if col in df.columns else ""
                 pdf.cell(col_widths[i],8,value,1,0,"C",fill=fill)
+                if col in sum_columns:
+                    totals[col] += float(row[col])
             pdf.ln()
-            fill=not fill
-        pdf.ln(4)
+            fill = not fill
 
-    pdf.set_font("Arial",'B',12)
-    pdf.cell(0,8,"MainBar",ln=True)
-    pdf.set_font("Arial",'',9)
-    draw_table(main_df, ["Diameter","Length (m)","Quantity","Weight (kg)"], [35,40,35,40])
+        # صف الإجمالي
+        if sum_columns:
+            pdf.set_fill_color(200,200,200)
+            pdf.set_font("Arial",'B',10)
+            for i,col in enumerate(headers):
+                if col in sum_columns:
+                    pdf.cell(col_widths[i],8,f"{totals[col]:.2f}",1,0,"C",fill=True)
+                elif i==0:
+                    pdf.cell(col_widths[i],8,"TOTAL",1,0,"C",fill=True)
+                else:
+                    pdf.cell(col_widths[i],8,"",1,0,"C",fill=True)
+            pdf.ln(4)
 
-    pdf.cell(0,8,"Waste Bars",ln=True)
-    draw_table(waste_df, ["Diameter","Waste Length (m)","Number of Bars","Waste Weight (kg)"], [35,45,45,45])
-
-    pdf.cell(0,8,"Purchase 12m Bars",ln=True)
-    draw_table(purchase_df, ["Diameter","Bars","Weight (kg)","Cost"], [35,35,45,45])
-
-    pdf.cell(0,8,"Cutting Instructions",ln=True)
-    draw_table(cutting_df, ["Diameter","Pattern","Count"], [35,160,35])
+    # ==== رسم الجداول ====
+    draw_table(main_df, ["Diameter","Length (m)","Quantity","Weight (kg)"], [35,40,35,40], title="MainBar", sum_columns=["Weight (kg)"])
+    draw_table(waste_df, ["Diameter","Waste Length (m)","Number of Bars","Waste Weight (kg)"], [35,45,45,45], title="Waste Bars", sum_columns=["Waste Weight (kg)"])
+    draw_table(purchase_df, ["Diameter","Bars","Weight (kg)","Cost"], [35,35,45,45], title="Purchase 12m Bars", sum_columns=["Weight (kg)","Cost"])
+    draw_table(cutting_df, ["Diameter","Pattern","Count"], [35,160,35], title="Cutting Instructions")
 
     pdf.output(pdf_file)
     with open(pdf_file,"rb") as f:
