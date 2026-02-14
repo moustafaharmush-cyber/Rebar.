@@ -4,6 +4,7 @@ import pandas as pd
 from fpdf import FPDF
 import datetime
 from collections import defaultdict, Counter
+import math
 
 # =========================
 # إعدادات عامة
@@ -47,6 +48,28 @@ def optimize_cutting(lengths):
 
 
 # =========================
+# PDF Class (لإضافة Watermark بكل الصفحات)
+# =========================
+class PDF(FPDF):
+
+    def header(self):
+        if self.page_no() > 1:
+            self.set_font("Arial",'B',50)
+            self.set_text_color(230,230,230)
+            self.rotate(45, x=self.w/2, y=self.h/2)
+            self.text(self.w/4, self.h/2, "NovaStruct")
+            self.rotate(0)
+            self.set_text_color(0,0,0)
+
+    def footer(self):
+        if self.page_no() > 1:
+            self.set_y(-15)
+            self.set_font("Arial",'I',8)
+            self.set_text_color(120,120,120)
+            self.cell(0,10,"NovaStruct Company | Structural Engineering Solutions",0,0,"C")
+
+
+# =========================
 # PDF Generator
 # =========================
 def generate_pdf(main_df,waste_df,purchase_df,cutting_df,
@@ -55,38 +78,59 @@ def generate_pdf(main_df,waste_df,purchase_df,cutting_df,
                  logo_path="logo.png"):
 
     company_name="NovaStruct Company"
+    report_number=f"NS-{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
-    pdf=FPDF(orientation='L')
+    pdf=PDF(orientation='L')
+    pdf.set_auto_page_break(auto=True, margin=15)
+
+    # ====================================
+    # صفحة الغلاف
+    # ====================================
     pdf.add_page()
-    pdf.set_auto_page_break(auto=True, margin=10)
 
-    # شعار
+    pdf.set_fill_color(230,240,255)
+    pdf.rect(0,0,pdf.w,pdf.h,"F")
+
     try:
-        pdf.image(logo_path, x=10, y=8, w=30)
+        pdf.image(logo_path, x=pdf.w/2-30, y=20, w=60)
     except:
         pass
 
-    # اسم الشركة
-    pdf.set_font("Arial",'B',22)
+    pdf.ln(60)
+    pdf.set_font("Arial",'B',36)
     pdf.set_text_color(0,51,102)
-    pdf.cell(0,15,company_name,ln=True,align="C")
-    pdf.set_text_color(0,0,0)
+    pdf.cell(0,20,"Rebar Optimization Report",ln=True,align="C")
 
-    # عنوان التقرير
+    pdf.set_font("Arial",'B',22)
+    pdf.ln(10)
+    pdf.cell(0,15,company_name,ln=True,align="C")
+
+    pdf.set_font("Arial",'',16)
+    pdf.ln(5)
+    pdf.cell(0,10,f"Report No: {report_number}",ln=True,align="C")
+    pdf.cell(0,10,f"Date: {datetime.date.today()}",ln=True,align="C")
+
+    # ====================================
+    # صفحة التقرير
+    # ====================================
+    pdf.add_page()
+
+    # Header
+    pdf.set_font("Arial",'B',18)
+    pdf.cell(0,10,company_name,align="L")
+
+    try:
+        pdf.image(logo_path, x=pdf.w-70, y=8, w=60)
+    except:
+        pass
+
+    pdf.ln(15)
+
     pdf.set_font("Arial",'B',16)
     pdf.cell(0,10,"Rebar Optimization Report",ln=True,align="C")
 
-    # خط تحت العنوان
-    x_left=10
-    x_right=pdf.w-10
-    y=pdf.get_y()
-    pdf.set_line_width(0.7)
-    pdf.set_draw_color(0,51,102)
-    pdf.line(x_left,y,x_right,y)
-    pdf.ln(5)
-
     pdf.set_font("Arial",'',10)
-    pdf.cell(0,8,"Created by Civil Engineer Moustafa Harmouch",ln=True)
+    pdf.cell(0,8,f"Report No: {report_number}",ln=True)
     pdf.cell(0,8,f"Date: {datetime.date.today()}",ln=True)
     pdf.ln(5)
 
@@ -105,66 +149,58 @@ def generate_pdf(main_df,waste_df,purchase_df,cutting_df,
         for _,row in df.iterrows():
             pdf.set_fill_color(245,245,245)
             for i,col in enumerate(headers):
-                value = str(row[col]) if col in df.columns else ""
+                value=str(row[col]) if col in df.columns else ""
                 pdf.cell(col_widths[i],8,value,1,0,"C",fill=fill)
             pdf.ln()
             fill=not fill
 
         pdf.ln(4)
 
-    # ===== MainBar =====
-    pdf.set_font("Arial",'B',11)
+    # MainBar
+    pdf.set_font("Arial",'B',12)
     pdf.cell(0,8,"MainBar",ln=True)
     pdf.set_font("Arial",'',9)
     draw_table(main_df,
                ["Diameter","Length (m)","Quantity","Weight (kg)"],
-               [30,35,30,35])
-
+               [35,40,35,40])
     pdf.set_font("Arial",'B',10)
     pdf.cell(0,8,f"Total Main Steel Weight: {total_main_weight:.2f} kg",ln=True)
-    pdf.ln(3)
+    pdf.ln(4)
 
-    # ===== Waste =====
-    pdf.set_font("Arial",'B',11)
+    # Waste
+    pdf.set_font("Arial",'B',12)
     pdf.cell(0,8,"Waste Bars",ln=True)
     pdf.set_font("Arial",'',9)
     draw_table(waste_df,
                ["Diameter","Waste Length (m)","Number of Bars","Waste Weight (kg)"],
-               [30,40,40,40])
-
+               [35,45,45,45])
     pdf.set_font("Arial",'B',10)
     pdf.cell(0,8,f"Total Waste Weight: {total_waste_weight:.2f} kg",ln=True)
-    pdf.ln(3)
+    pdf.ln(4)
 
-    # ===== Purchase =====
-    pdf.set_font("Arial",'B',11)
+    # Purchase
+    pdf.set_font("Arial",'B',12)
     pdf.cell(0,8,"Purchase 12m Bars",ln=True)
     pdf.set_font("Arial",'',9)
     draw_table(purchase_df,
                ["Diameter","Bars","Weight (kg)","Cost"],
-               [30,35,40,40])
-
+               [35,35,45,45])
     pdf.set_font("Arial",'B',10)
     pdf.cell(0,8,f"Total Purchase Weight: {total_purchase_weight:.2f} kg",ln=True)
     pdf.cell(0,8,f"Total Cost: ${total_cost:.2f}",ln=True)
     pdf.ln(5)
 
-    # ===== Cutting =====
-    pdf.set_font("Arial",'B',11)
+    # Cutting
+    pdf.set_font("Arial",'B',12)
     pdf.cell(0,8,"Cutting Instructions",ln=True)
     pdf.set_font("Arial",'',8)
     draw_table(cutting_df,
                ["Diameter","Pattern","Count"],
-               [30,140,30])
+               [35,160,35])
 
-    # Footer
-    pdf.set_y(-15)
-    pdf.set_font("Arial",'I',8)
-    pdf.set_text_color(120,120,120)
-    pdf.cell(0,10,"NovaStruct Company | Structural Engineering Solutions",0,0,"C")
-
-    filename=f"Rebar_Report_{datetime.date.today()}.pdf"
+    filename=f"{report_number}.pdf"
     pdf.output(filename)
+
     return filename
 
 
@@ -220,7 +256,7 @@ if st.button("Run Optimization"):
                     weight=r["Length"]*r["Quantity"]*weight_per_meter(diameter)
                     main_rows.append({
                         "Diameter":diameter,
-                        "Length":r["Length"],
+                        "Length":round(r["Length"],2),
                         "Quantity":r["Quantity"],
                         "Weight":round(weight,2)
                     })
@@ -241,9 +277,9 @@ if st.button("Run Optimization"):
         })
 
         main_df["Diameter"] = main_df["Diameter"].astype(int).astype(str) + " mm"
-        main_df["Length (m)"] = main_df["Length (m)"].map(lambda x:str(round(x,2)))
-        main_df["Quantity"] = main_df["Quantity"].astype(int).astype(str)
-        main_df["Weight (kg)"] = main_df["Weight (kg)"].map(lambda x:str(round(x,2)))
+        main_df["Length (m)"] = main_df["Length (m)"].astype(str)
+        main_df["Quantity"] = main_df["Quantity"].astype(str)
+        main_df["Weight (kg)"] = main_df["Weight (kg)"].astype(str)
 
     waste_dict=defaultdict(lambda:{"count":0,"weight":0})
     purchase_list=[]
@@ -259,20 +295,20 @@ if st.button("Run Optimization"):
         total_weight=bars_used*BAR_LENGTH*wpm
         cost=(total_weight/1000)*price
 
-        purchase_list.append([d,bars_used,round(total_weight,2),round(cost,2)])
+        purchase_list.append([f"{d} mm",bars_used,round(total_weight,2),round(cost,2)])
 
         for bar in solution:
-            waste=BAR_LENGTH-sum(bar)
+            waste=round(BAR_LENGTH-sum(bar),2)
             if waste>0:
-                key=(d,round(waste,2))
+                key=(f"{d} mm",waste)
                 waste_dict[key]["count"]+=1
                 waste_dict[key]["weight"]+=waste*wpm
 
         pattern_counts=Counter(tuple(bar) for bar in solution)
 
         for pattern,count in pattern_counts.items():
-            pattern_str=" + ".join([f"{l:.2f} m" for l in pattern])
-            cutting_instr.append([d,pattern_str,count])
+            pattern_str=" + ".join([f"{round(l,2)} m" for l in pattern])
+            cutting_instr.append([f"{d} mm",pattern_str,count])
 
     waste_data=[]
     for (diameter,waste_len),info in waste_dict.items():
@@ -286,10 +322,6 @@ if st.button("Run Optimization"):
 
     cutting_df=pd.DataFrame(cutting_instr,
         columns=["Diameter","Pattern","Count"])
-
-    waste_df["Diameter"] = waste_df["Diameter"].astype(int).astype(str) + " mm"
-    purchase_df["Diameter"] = purchase_df["Diameter"].astype(int).astype(str) + " mm"
-    cutting_df["Diameter"] = cutting_df["Diameter"].astype(int).astype(str) + " mm"
 
     total_main_weight = sum(float(w) for w in main_df["Weight (kg)"]) if not main_df.empty else 0
     total_purchase_weight = purchase_df["Weight (kg)"].sum() if not purchase_df.empty else 0
