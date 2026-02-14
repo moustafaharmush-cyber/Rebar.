@@ -193,12 +193,12 @@ if st.button("Run Optimization"):
     pdf.set_xy(10, start_y)
     pdf.cell(80,15,"Rebar Optimization Report", ln=0, align="L")
     try:
-        pdf.image(logo_path, x=(pdf.w/2)-25, y=start_y+5, w=50)
+        pdf.image(logo_path, x=(pdf.w/2)-25, y=start_y+35, w=50)  # <-- اللوجو انزلناه 30 وحدة عن موقعه السابق
     except:
         pass
     pdf.set_xy(pdf.w-110, start_y)
     pdf.cell(100,15, company_name, ln=0, align="R")
-    pdf.ln(30)
+    pdf.ln(50)
     pdf.set_font("Arial",'',10)
     pdf.cell(0,8,f"Report No: {report_number}", ln=True)
     pdf.cell(0,8,f"Date: {date.today()}", ln=True)
@@ -207,26 +207,21 @@ if st.button("Run Optimization"):
     # ==== دالة رسم الجداول الآمنة ====
     def draw_table(df, headers, col_widths, title="", sum_columns=[]):
         if df.empty:
-            return  # لا ترسم الجدول إذا كان فارغًا
-
+            return
         if title:
             pdf.set_font("Arial",'B',16)
             pdf.set_text_color(0,51,102)
             pdf.cell(0,10,title,ln=True,align="L")
             pdf.ln(5)
-
         pdf.set_fill_color(0,51,102)
         pdf.set_text_color(255,255,255)
         pdf.set_font("Arial",'B',10)
-
         for i,h in enumerate(headers):
             pdf.cell(col_widths[i],12,h,1,0,"C",fill=True)
         pdf.ln()
         pdf.set_text_color(0,0,0)
-
         fill=False
         totals={col:0 for col in sum_columns if col in df.columns}
-
         for idx,row in df.iterrows():
             if pdf.get_y() > pdf.h - 30:
                 pdf.add_page()
@@ -245,7 +240,6 @@ if st.button("Run Optimization"):
                         pass
             pdf.ln()
             fill=not fill
-
         if totals:
             pdf.set_fill_color(200,200,200)
             pdf.set_font("Arial",'B',10)
