@@ -200,4 +200,70 @@ if st.button("Run Optimization"):
     pdf.cell(100,15, company_name, ln=0, align="R")
     pdf.ln(30)
     pdf.set_font("Arial",'',10)
-    pdf.cell
+    pdf.cell(0,8,f"Report No: {report_number}", ln=True)
+    pdf.cell(0,8,f"Date: {date.today()}", ln=True)
+    pdf.ln(10)
+
+    # ==== دالة رسم الجداول الآمنة ====
+    def draw_table(df, headers, col_widths, title="", sum_columns=[]):
+        if df.empty:
+            return  # لا ترسم الجدول إذا كان فارغًا
+
+        if title:
+            pdf.set_font("Arial",'B',16)
+            pdf.set_text_color(0,51,102)
+            pdf.cell(0,10,title,ln=True,align="L")
+            pdf.ln(5)
+
+        pdf.set_fill_color(0,51,102)
+        pdf.set_text_color(255,255,255)
+        pdf.set_font("Arial",'B',10)
+
+        for i,h in enumerate(headers):
+            pdf.cell(col_widths[i],12,h,1,0,"C",fill=True)
+        pdf.ln()
+        pdf.set_text_color(0,0,0)
+
+        fill=False
+        totals={col:0 for col in sum_columns if col in df.columns}
+
+        for idx,row in df.iterrows():
+            if pdf.get_y() > pdf.h - 30:
+                pdf.add_page()
+                for i,h in enumerate(headers):
+                    pdf.cell(col_widths[i],12,h,1,0,"C",fill=True)
+                pdf.ln()
+                pdf.set_text_color(0,0,0)
+            pdf.set_fill_color(245,245,245) if fill else pdf.set_fill_color(255,255,255)
+            for i,col in enumerate(headers):
+                value=str(row[col]) if col in df.columns else ""
+                pdf.cell(col_widths[i],10,value,1,0,"C",fill=fill)
+                if col in totals:
+                    try:
+                        totals[col]+=float(row[col])
+                    except:
+                        pass
+            pdf.ln()
+            fill=not fill
+
+        if totals:
+            pdf.set_fill_color(200,200,200)
+            pdf.set_font("Arial",'B',10)
+            for i,col in enumerate(headers):
+                if col in totals:
+                    pdf.cell(col_widths[i],10,f"{totals[col]:.2f}",1,0,"C",fill=True)
+                elif i==0:
+                    pdf.cell(col_widths[i],10,"TOTAL",1,0,"C",fill=True)
+                else:
+                    pdf.cell(col_widths[i],10,"",1,0,"C",fill=True)
+            pdf.ln(12)
+
+    # ==== رسم الجداول ====
+    draw_table(main_df, ["Diameter","Length (m)","Quantity","Weight (kg)"], [35,45,35,35], title="MainBar", sum_columns=["Weight (kg)"])
+    draw_table(waste_df, ["Diameter","Waste Length (m)","Number of Bars","Waste Weight (kg)"], [35,50,40,40], title="Waste Bars", sum_columns=["Waste Weight (kg)"])
+    draw_table(purchase_df, ["Diameter","Bars","Weight (kg)","Cost"], [35,35,40,40], title="Purchase 12m Bars", sum_columns=["Weight (kg)","Cost"])
+    draw_table(cutting_df, ["Diameter","Pattern","Count"], [35,100,35], title="Cutting Instructions")
+
+    pdf.output(pdf_file)
+    with open(pdf_file,"rb") as f:
+        st.download_button("Download PDF Report", f, file_name=pdf_file)
