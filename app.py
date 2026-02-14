@@ -193,7 +193,7 @@ if st.button("Run Optimization"):
     pdf.set_xy(10, start_y)
     pdf.cell(80,15,"Rebar Optimization Report", ln=0, align="L")
     try:
-        pdf.image(logo_path, x=(pdf.w/2)-25, y=start_y+35, w=50)  # <-- اللوجو انزلناه 30 وحدة عن موقعه السابق
+        pdf.image(logo_path, x=(pdf.w/2)-25, y=start_y+35, w=50)  # اللوجو أسفل العنوان بمقدار 30 وحدة
     except:
         pass
     pdf.set_xy(pdf.w-110, start_y)
@@ -256,7 +256,7 @@ if st.button("Run Optimization"):
     draw_table(main_df, ["Diameter","Length (m)","Quantity","Weight (kg)"], [35,45,35,35], title="MainBar", sum_columns=["Weight (kg)"])
     draw_table(waste_df, ["Diameter","Waste Length (m)","Number of Bars","Waste Weight (kg)"], [35,50,40,40], title="Waste Bars", sum_columns=["Waste Weight (kg)"])
     draw_table(purchase_df, ["Diameter","Bars","Weight (kg)","Cost"], [35,35,40,40], title="Purchase 12m Bars", sum_columns=["Weight (kg)","Cost"])
-    draw_table(cutting_df, ["Diameter","Pattern","Count"], [35,100,35], title="Cutting Instructions")
+    draw_table(cutting_df, ["Diameter","Pattern","Count"], [20,140,10], title="Cutting Instructions")
 
     pdf.output(pdf_file)
     with open(pdf_file,"rb") as f:
